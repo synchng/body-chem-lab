@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BODY CHEM LAB</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+  </script>
+</head>
+<body data-screen="home">
+  <canvas id="lab"></canvas>
+  <canvas id="stage"></canvas>
+  <video id="video" playsinline muted></video>
+
+  <!-- HOME -->
+  <section class="screen" id="home">
+    <p class="eyebrow">제스처 기반 화학 학습 시뮬레이터</p>
+    <h1>BODY CHEM LAB</h1>
+    <p class="sub">Learn Chemistry Through Movement.<br><small>몸을 움직이며 배우는 화학</small></p>
+    <button id="start" class="btn primary">실험 시작</button>
+    <a class="link" href="?sim">카메라가 없나요? 마우스 시뮬레이션으로 체험하기</a>
+  </section>
+
+  <!-- CAMERA PERMISSION -->
+  <section class="screen" id="permission">
+    <div class="panel narrow">
+      <p class="eyebrow">1단계 · 카메라</p>
+      <h2>내 몸이 곧 실험 도구예요.</h2>
+      <p>몸의 움직임으로 원자와 분자를 조작해요. 카메라가 손가락과 어깨의 위치를 인식해요.</p>
+      <p class="muted">영상은 이 기기에서만 처리되며, 녹화하거나 업로드하지 않아요.</p>
+      <p id="perm-status" class="status" role="status">카메라 권한을 기다리는 중…</p>
+      <div id="perm-error" class="error" hidden>
+        <p id="perm-error-msg"></p>
+        <div class="row">
+          <button id="perm-retry" class="btn">다시 시도</button>
+          <button id="perm-sim" class="btn ghost">마우스 시뮬레이션 사용</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALIBRATION -->
+  <section class="screen" id="calibration">
+    <div class="panel cal">
+      <p class="eyebrow">2단계 · 캘리브레이션</p>
+      <h2 id="cal-msg">카메라 앞에 양손을 들고 검지를 펴 주세요.</h2>
+      <ul class="checks">
+        <li id="cal-face"><i></i>얼굴</li>
+        <li id="cal-left"><i></i>왼손 검지</li>
+        <li id="cal-right"><i></i>오른손 검지</li>
+        <li id="cal-body"><i></i>상체</li>
+        <li id="cal-ready" class="ready"><i></i>준비 완료</li>
+      </ul>
+      <div class="bar"><span id="cal-bar"></span></div>
+      <p class="muted readout">양손 거리 <b id="cal-dist">–</b> (어깨너비 기준) · 몸 중심 <b id="cal-center">–</b></p>
+    </div>
+  </section>
+
+  <!-- MODULE SELECT -->
+  <section class="screen" id="select">
+    <p class="eyebrow">3단계 · 난이도와 실험 선택</p>
+    <h2>손을 카드 위에 올리고 잠시 유지하세요.</h2>
+    <div id="tiers" class="tiers" role="tablist" aria-label="난이도 선택"></div>
+    <div id="cards" class="cards"></div>
+  </section>
+
+  <!-- TUTORIAL -->
+  <section class="screen" id="tutorial">
+    <p class="eyebrow" id="tut-num"></p>
+    <h2 id="tut-name"></h2>
+    <div class="tut-stage" id="tut-stage">
+      <svg class="figure" viewBox="0 0 200 200" aria-hidden="true">
+        <circle cx="100" cy="52" r="22"/><path d="M40 200 C40 120 60 96 100 96 C140 96 160 120 160 200"/>
+      </svg>
+      <span class="hand l">L</span><span class="hand r">R</span>
+      <span class="tut-atom"></span><span class="tut-slot"></span>
+    </div>
+    <p class="steps" id="tut-steps"></p>
+    <p id="tut-kid" class="kid tut-kid" hidden></p>
+    <button class="btn primary hold" id="tut-go">준비됐어요 <small>유지 · OK 사인</small></button>
+  </section>
+
+  <!-- EXPERIMENT HUD -->
+  <section class="screen" id="experiment">
+    <div class="hud-top">
+      <span class="eyebrow" id="hud-title"></span>
+      <button class="btn ghost small" id="exit">나가기</button>
+    </div>
+    <aside class="panel guide" id="guide" aria-label="제스처 가이드"></aside>
+    <div class="gesture-box" role="status" aria-live="polite">
+      <div id="coach-hud" class="coach" hidden></div>
+      <div class="gesture-text">
+        <span class="label">현재 제스처</span>
+        <strong id="gesture">–</strong>
+        <p id="hint"></p>
+      </div>
+    </div>
+    <aside class="panel legend" id="legend" aria-label="범례"></aside>
+  </section>
+
+  <!-- CONCEPT (shown over the finished experiment: action → visual result → concept) -->
+  <section class="screen" id="concept">
+    <div class="panel narrow">
+      <p class="eyebrow">행동 → 시각적 결과 → <b>개념</b></p>
+      <h2 id="concept-title"></h2>
+      <div id="concept-text"></div>
+      <button class="btn primary hold" id="concept-go">계속 <small>유지 · OK 사인</small></button>
+    </div>
+  </section>
+
+  <!-- QUIZ (high-school lessons: action → visual result → concept → quiz) -->
+  <section class="screen" id="quiz">
+    <div class="panel narrow">
+      <p class="eyebrow">고등 난이도 · High School Chemistry · 확인 문제</p>
+      <h2 id="quiz-q"></h2>
+      <div id="quiz-options" class="options"></div>
+      <p id="quiz-feedback" class="status" role="status"></p>
+      <button class="btn primary hold" id="quiz-go" hidden>결과 보기 <small>유지 · OK 사인</small></button>
+    </div>
+  </section>
+
+  <!-- OUT OF HEARTS (high-school tier) -->
+  <section class="screen" id="retry">
+    <div class="panel narrow">
+      <p class="eyebrow">고등 난이도 · High School Chemistry</p>
+      <p class="hearts-lost" aria-hidden="true">♡♡♡♡♡</p>
+      <h2>하트를 모두 잃었어요.</h2>
+      <p>괜찮아요! 틀린 부분을 떠올리며 처음부터 다시 도전해 보세요.</p>
+      <div class="row">
+        <button class="btn primary hold" id="retry-go">다시 하기 <small>유지 · OK 사인</small></button>
+        <button class="btn ghost hold" id="retry-menu">모듈 목록</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEARNING RESULT -->
+  <section class="screen" id="result">
+    <div class="panel narrow">
+      <p class="eyebrow">실험 완료</p>
+      <h2 id="res-outcome"></h2>
+      <dl class="stats">
+        <div><dt id="res-label"></dt><dd id="res-short"></dd></div>
+        <div><dt>제스처 인식률</dt><dd id="res-acc"></dd></div>
+        <div><dt>시도 횟수</dt><dd id="res-att"></dd></div>
+        <div><dt>완료 시간</dt><dd id="res-time"></dd></div>
+        <div><dt>학습한 개념</dt><dd id="res-concept"></dd></div>
+        <div><dt>학습 진행도</dt><dd id="res-progress"></dd></div>
+        <div id="res-quiz-row" hidden><dt>확인 문제</dt><dd id="res-quiz"></dd></div>
+        <div id="res-hearts-row" hidden><dt>남은 하트</dt><dd id="res-hearts" class="heart-text"></dd></div>
+      </dl>
+      <p class="muted small-note">제스처 인식률 = 필요한 손이 인식된 프레임의 비율</p>
+      <div class="row">
+        <button class="btn hold" id="res-replay">다시 하기</button>
+        <button class="btn primary hold" id="res-next">다음 모듈</button>
+        <button class="btn ghost hold" id="res-menu">모듈 목록</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="hearts" role="status" hidden></div>
+  <div id="coach-float" class="coach" aria-live="polite" hidden></div>
+  <canvas id="overlay"></canvas>
+  <script type="module" src="src/main.js"></script>
+  <script>
+    // Double-clicking index.html opens it as file://, where modules and the camera don't work.
+    if (location.protocol === 'file:') document.getElementById('home').insertAdjacentHTML('beforeend',
+      '<p class="error">파일을 직접 열면 실행되지 않아요. 터미널에서 <b>npm start</b> 를 실행한 뒤 Chrome에서 http://localhost:5173 을 열어 주세요.</p>');
+  </script>
+</body>
+</html>
